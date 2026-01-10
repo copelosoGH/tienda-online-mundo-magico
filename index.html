@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Tienda Carousel</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+    <style>
+        :root {
+            --primary: #25D366;
+            --dark: #333;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+            background: #f4f4f4;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--dark);
+        }
+
+        /* Estilos del Carrusel */
+        .swiper {
+            width: 100%;
+            padding-bottom: 50px;
+        }
+
+        .swiper-slide {
+            background: #fff;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .swiper-slide:hover {
+            transform: translateY(-5px);
+        }
+
+        .swiper-slide img {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+        }
+
+        .info {
+            padding: 15px;
+        }
+
+        /* Detalle del Producto (Modal) */
+        #modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: #fff;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+            position: relative;
+        }
+
+        .btn-whatsapp {
+            background: var(--primary);
+            color: white;
+            text-decoration: none;
+            padding: 12px 25px;
+            border-radius: 50px;
+            display: inline-block;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 25px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h1>Nuestros Productos</h1>
+
+        <div class="swiper">
+            <div class="swiper-wrapper" id="product-list">
+            </div>
+            <div class="swiper-pagination"></div>
+            <div class="swiper-button-next"></div>
+            <div class="swiper-button-prev"></div>
+        </div>
+    </div>
+
+    <div id="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal()">&times;</span>
+            <img id="modal-img" src="" style="width:100%; border-radius:10px;">
+            <h2 id="modal-title"></h2>
+            <p id="modal-desc"></p>
+            <a id="whatsapp-link" href="#" target="_blank" class="btn-whatsapp">Consultar por WhatsApp</a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBAwajRszUkOGecRCSIgwiEWnpkXjxz3vo",
+            authDomain: "tienda-online-81c97.firebaseapp.com",
+            projectId: "tienda-online-81c97",
+            storageBucket: "tienda-online-81c97.firebasestorage.app",
+            messagingSenderId: "977391278715",
+            appId: "1:977391278715:web:610fe81e5b2b66237c20de"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const productList = document.getElementById('product-list');
+
+        // Escucha la base de datos y actualiza el carrusel solo
+        onSnapshot(collection(db, "productos"), (snapshot) => {
+            productList.innerHTML = '';
+            snapshot.forEach((doc) => {
+                const p = doc.data();
+                productList.innerHTML += `
+                <div class="swiper-slide" onclick="openModal('${p.nombre}', '${p.desc}', '${p.img}')">
+                    <img src="${p.img}" style="width:100%; height:200px; object-fit:cover;">
+                    <div style="padding:15px;">
+                        <h3>${p.nombre}</h3>
+                        <p style="color:#25D366; font-weight:bold;">${p.precio}</p>
+                    </div>
+                </div>`;
+            });
+            // IMPORTANTE: Re-inicializa o actualiza el carrusel
+            if (typeof swiper !== 'undefined') swiper.update();
+        });
+
+        // 1. Configuración del Carrusel
+        const swiper = new Swiper('.swiper', {
+            slidesPerView: 1,
+            spaceBetween: 20,
+            pagination: { el: '.swiper-pagination', clickable: true },
+            navigation: { nextEl: '.swiper-button-next', prevEl: '.swiper-button-prev' },
+            breakpoints: {
+                640: { slidesPerView: 2 },
+                1024: { slidesPerView: 3 }
+            }
+        });
+
+        // 2. Funciones para abrir y cerrar el Modal
+        window.openModal = (name, desc, img) => {
+            document.getElementById('modal-title').innerText = name;
+            document.getElementById('modal-desc').innerText = desc;
+            document.getElementById('modal-img').src = img;
+
+            const phone = "543424382633"; // CAMBIA ESTO POR EL NÚMERO DEL CLIENTE
+            const msg = encodeURIComponent(`¡Hola! Me interesa el producto: ${name}`);
+            document.getElementById('whatsapp-link').href = `https://wa.me/${phone}?text=${msg}`;
+
+            document.getElementById('modal').style.display = 'flex';
+        };
+
+        window.closeModal = () => {
+            document.getElementById('modal').style.display = 'none';
+        };
+    </script>
+
+</body>
+
+</html>

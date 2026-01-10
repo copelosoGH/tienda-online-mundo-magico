@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Control - Tienda</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 20px; color: #333; }
+        .container { max-width: 600px; margin: auto; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        input, textarea { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .btn-save { background: #25D366; color: white; }
+        .btn-save:hover { background: #1da851; }
+        .producto-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; }
+        .btn-delete { background: #ff4757; color: white; width: auto; padding: 5px 12px; font-size: 12px; }
+        #preview { width: 100%; max-width: 150px; display: none; margin: 10px auto; border-radius: 8px; border: 2px solid #25D366; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="card">
+            <h2>🛍️ Agregar Nuevo Producto</h2>
+            <input type="text" id="nombre" placeholder="Nombre del producto">
+            <textarea id="desc" placeholder="Descripción breve"></textarea>
+            <input type="text" id="precio" placeholder="Precio (ej: $1.500)">
+            
+            <img id="preview" src="" alt="Vista previa">
+            
+            <button type="button" id="btn-foto" onclick="abrirSubida()" style="background: #0080ff; margin-bottom: 10px; color: white;">
+                📸 Seleccionar Foto
+            </button>
+            
+            <button class="btn-save" onclick="guardarProducto()">
+                🚀 Publicar Producto
+            </button>
+        </div>
+
+        <div class="card">
+            <h3>Productos en la Web</h3>
+            <div id="lista-admin">Cargando...</div>
+        </div>
+    </div>
+
+    <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // --- MEJORA 1: Seguridad por sesión ---
+        if (!sessionStorage.getItem('autenticado')) {
+            const password = prompt("Introduce la contraseña de administrador:");
+            if (password === "conradop2026") {
+                sessionStorage.setItem('autenticado', 'true');
+            } else {
+                alert("Acceso denegado");
+                window.location.href = "index.html";
+            }
+        }
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBAwajRszUkOGecRCSIgwiEWnpkXjxz3vo",
+            authDomain: "tienda-online-81c97.firebaseapp.com",
+            projectId: "tienda-online-81c97",
+            storageBucket: "tienda-online-81c97.firebasestorage.app",
+            messagingSenderId: "977391278715",
+            appId: "1:977391278715:web:610fe81e5b2b66237c20de"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const productosRef = collection(db, "productos");
+
+        let urlImagenSubida = ""; 
+
+        const myWidget = cloudinary.createUploadWidget({
+            cloudName: 'dpl0ce3va', 
+            uploadPreset: 'fotos_tienda' 
+        }, (error, result) => {
+            if (!error && result && result.event === "success") {
+                urlImagenSubida = result.info.secure_url;
+                // Mostrar vista previa y feedback
+                const imgPreview = document.getElementById('preview');
+                imgPreview.src = urlImagenSubida;
+                imgPreview.style.display = "block";
+                document.getElementById('btn-foto').innerText = "✅ Foto Cargada";
+            }
+        });
+
+        window.abrirSubida = () => myWidget.open();
+
+        // --- MEJORA 2: Guardar y limpiar sin recargar ---
+        window.guardarProducto = async () => {
+            const nomInput = document.getElementById('nombre');
+            const descInput = document.getElementById('desc');
+            const precInput = document.getElementById('precio');
+
+            if (!nomInput.value || !precInput.value || !urlImagenSubida) {
+                return alert("Por favor completa los campos y sube una foto.");
+            }
+
+            try {
+                await addDoc(productosRef, { 
+                    nombre: nomInput.value, 
+                    desc: descInput.value, 
+                    precio: precInput.value, 
+                    img: urlImagenSubida 
+                });
+
+                // Limpiar formulario
+                nomInput.value = "";
+                descInput.value = "";
+                precInput.value = "";
+                urlImagenSubida = "";
+                document.getElementById('preview').style.display = "none";
+                document.getElementById('btn-foto').innerText = "📸 Seleccionar Foto";
+                
+            } catch (e) {
+                alert("Error al guardar producto");
+                console.error(e);
+            }
+        };
+
+        window.eliminarProducto = async (id) => {
+            if (confirm("¿Borrar este producto?")) await deleteDoc(doc(db, "productos", id));
+        };
+
+        onSnapshot(productosRef, (snapshot) => {
+            const lista = document.getElementById('lista-admin');
+            lista.innerHTML = '';
+            snapshot.forEach((docSnap) => {
+                const p = docSnap.data();
+                lista.innerHTML += `
+                <div class="producto-item">
+                    <span><strong>${p.nombre}</strong> (${p.precio})</span>
+                    <button class="btn-delete" onclick="eliminarProducto('${docSnap.id}')">Eliminar</button>
+                </div>`;
+            });
+        });
+    </script>
+</body>
+</html>
