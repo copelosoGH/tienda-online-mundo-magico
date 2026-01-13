@@ -4,127 +4,118 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi Tienda Carousel</title>
+    <title>Mundo Magico - Catalogo Online</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
     <style>
-        :root {
-            --primary: #25D366;
-            --dark: #333;
+        :root { --primary: #25D366; --dark: #333; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f4f4f4; padding-top: 80px; }
+
+        /* --- HEADER Y LOGO --- */
+        header { 
+            background: white; position: fixed; top: 0; width: 100%; 
+            z-index: 1000; box-shadow: 0 2px 5px rgba(0,0,0,0.1); 
+            display: flex; align-items: center; justify-content: space-between;
+            box-sizing: border-box;
+        }
+        .menu-btn { background: none; border: none; cursor: pointer; padding: 0; font-size: 25px; margin-left: 20px;}
+        .header-logo { height: 75px; object-fit: contain; }
+
+        .side-menu {
+            position: fixed; top: 0; left: -250px; width: 250px; height: 100%;
+            background: white; z-index: 2001; transition: 0.3s; padding: 20px; box-shadow: 2px 0 5px rgba(0,0,0,0.2);
+            box-sizing: border-box;
+        }
+        .side-menu.active { left: 0; }
+        .side-menu a { display: block; padding: 12px; color: var(--dark); text-decoration: none; border-bottom: 1px solid #eee; }
+        .overlay { 
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.5); z-index: 2000; 
         }
 
-        body {
-            font-family: 'Segoe UI', sans-serif;
-            margin: 0;
-            background: #f4f4f4;
+        .container { max-width: 1100px; margin: auto; padding: 10px; }
+        .category-section { margin-bottom: 40px; }
+        .category-title { border-left: 5px solid var(--primary); padding-left: 15px; margin-left: 45px; margin-bottom: 15px; font-size: 22px; }
+
+        /* --- CARRUSEL Y FLECHAS --- */
+        .carousel-wrapper { position: relative; padding: 0 60px; }
+        .swiper { width: 100%; padding-bottom: 35px; }
+        .swiper-slide { 
+            background: #fff; border-radius: 15px; overflow: hidden; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: center; cursor: pointer; 
+        }
+        .swiper-slide img { width: 100%; height: 280px; object-fit: cover; }
+        
+        .swiper-button-next { right: 10px !important; }
+        .swiper-button-prev { left: 10px !important; }
+
+        /* Estilos de precio ajustados */
+        .price-container { margin-top: 5px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+        .price-main { color: var(--primary); font-weight: bold; font-size: 18px; margin: 0; line-height: 1; }
+        .price-small { font-size: 11px; font-weight: normal; color: var(--primary); margin: 0; }
+        .price-sub { color: #888; font-size: 11px; margin: 4px 0 0 0; }
+
+        @media (max-width: 640px) {
+            .swiper-slide img { height: 180px; }
+            .category-title { margin-left: 35px; font-size: 18px; }
+            .carousel-wrapper { padding: 0 45px; }
+            body { padding-top: 70px; }
+            .swiper-button-next, .swiper-button-prev { transform: scale(0.8); }
         }
 
-        .container {
-            max-width: 1000px;
-            margin: 50px auto;
-            padding: 20px;
+        /* --- MODAL --- */
+        #modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 3000; justify-content: center; align-items: center; padding: 15px; box-sizing: border-box; }
+        .modal-content { 
+            background: #fff; padding: 20px; border-radius: 20px; width: 100%; max-width: 400px; 
+            text-align: center; position: relative; max-height: 90vh; overflow-y: auto; 
         }
-
-        h1 {
-            text-align: center;
-            color: var(--dark);
+        #modal-img { width: 100%; max-height: 300px; object-fit: contain; border-radius: 12px; margin-bottom: 10px; }
+        #modal-title { font-size: 20px; margin: 5px 0; }
+        #modal-precio { color: var(--primary); font-size: 26px; font-weight: bold; margin: 0; }
+        #modal-efect-text { color: var(--primary); font-size: 16px; margin: 0 0 5px 0; }
+        #modal-precio-sub { color: #888; font-size: 16px; margin: 5px 0 18px 0; }
+        
+        .btn-whatsapp { 
+            background: var(--primary); color: white; text-decoration: none; padding: 12px 25px; 
+            border-radius: 50px; display: inline-flex; align-items: center; gap: 10px; 
+            font-weight: bold; margin-top: 10px; 
         }
-
-        /* Estilos del Carrusel */
-        .swiper {
-            width: 100%;
-            padding-bottom: 50px;
-        }
-
-        .swiper-slide {
-            background: #fff;
-            border-radius: 15px;
-            overflow: hidden;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            text-align: center;
-            cursor: pointer;
-            transition: transform 0.3s;
-        }
-
-        .swiper-slide:hover {
-            transform: translateY(-5px);
-        }
-
-        .swiper-slide img {
-            width: 100%;
-            height: 250px;
-            object-fit: cover;
-        }
-
-        .info {
-            padding: 15px;
-        }
-
-        /* Detalle del Producto (Modal) */
-        #modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .modal-content {
-            background: #fff;
-            padding: 30px;
-            border-radius: 15px;
-            width: 90%;
-            max-width: 500px;
-            text-align: center;
-            position: relative;
-        }
-
-        .btn-whatsapp {
-            background: var(--primary);
-            color: white;
-            text-decoration: none;
-            padding: 12px 25px;
-            border-radius: 50px;
-            display: inline-block;
-            font-weight: bold;
-            margin-top: 20px;
-        }
-
-        .close-btn {
-            position: absolute;
-            top: 10px;
-            right: 20px;
-            font-size: 25px;
-            cursor: pointer;
-        }
+        .btn-whatsapp img { width: 30px; height: 30px; }
+        
+        .close-btn { position: absolute; top: 10px; right: 15px; font-size: 30px; cursor: pointer; color: #333; z-index: 10; }
     </style>
 </head>
 
 <body>
 
-    <div class="container">
-        <h1>Nuestros Productos</h1>
+    <header>
+        <button class="menu-btn" onclick="toggleMenu()">☰</button>
+        <h2>Mundo Mágico</h2>
+        <img src="logoMM.jpeg" alt="Logo Mundo Mágico" class="header-logo">
+    </header>
 
-        <div class="swiper">
-            <div class="swiper-wrapper" id="product-list">
-            </div>
-            <div class="swiper-pagination"></div>
-            <div class="swiper-button-next"></div>
-            <div class="swiper-button-prev"></div>
-        </div>
+    <div id="side-menu" class="side-menu">
+        <h3 style="margin-top: 0;">Categorías</h3>
+        <div id="menu-links"></div>
     </div>
+    <div id="overlay" class="overlay" onclick="toggleMenu()"></div>
+
+    <div class="container" id="main-content"></div>
 
     <div id="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeModal()">&times;</span>
-            <img id="modal-img" src="" style="width:400px; border-radius:10px;">
+            <img id="modal-img" src="">
             <h2 id="modal-title"></h2>
-            <p id="modal-desc"></p>
-            <a id="whatsapp-link" href="#" target="_blank" class="btn-whatsapp">Consultar por WhatsApp</a>
+            <p id="modal-desc" style="color:#666; font-size:14px;"></p>
+            <div id="modal-precio-container">
+                <p id="modal-precio"></p>
+                <p id="modal-efect-text">Efect/Trans</p>
+                <p id="modal-precio-sub">Consultar con debito/credito</p>
+            </div>
+            <a id="whatsapp-link" href="#" target="_blank" class="btn-whatsapp">
+                <img src="social.png" alt="WhatsApp">
+                Consultar por WhatsApp
+            </a>
         </div>
     </div>
 
@@ -132,7 +123,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBAwajRszUkOGecRCSIgwiEWnpkXjxz3vo",
@@ -145,56 +136,84 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        const productList = document.getElementById('product-list');
 
-        // Escucha la base de datos y actualiza el carrusel solo
-        onSnapshot(collection(db, "productos"), (snapshot) => {
-            productList.innerHTML = '';
-            snapshot.forEach((doc) => {
-                const p = doc.data();
-                productList.innerHTML += `
-                <div class="swiper-slide" onclick="openModal('${p.nombre}', '${p.desc}', '${p.img}')">
-                    <img src="${p.img}" style="width:100%; height:200px; object-fit:cover;">
-                    <div style="padding:15px;">
-                        <h3>${p.nombre}</h3>
-                        <p style="color:#25D366; font-weight:bold;">${p.precio}</p>
-                    </div>
-                </div>`;
+        window.toggleMenu = () => {
+            const menu = document.getElementById('side-menu');
+            const overlay = document.getElementById('overlay');
+            menu.classList.toggle('active');
+            overlay.style.display = menu.classList.contains('active') ? 'block' : 'none';
+        };
+
+        onSnapshot(query(collection(db, "categorias"), orderBy("nombre", "asc")), (catSnap) => {
+            onSnapshot(query(collection(db, "productos"), orderBy("nombre", "asc")), (prodSnap) => {
+                const mainContent = document.getElementById('main-content');
+                const menuLinks = document.getElementById('menu-links');
+                mainContent.innerHTML = '';
+                menuLinks.innerHTML = '';
+
+                const productos = prodSnap.docs.map(d => d.data());
+
+                catSnap.forEach(catDoc => {
+                    const catNombre = catDoc.data().nombre;
+                    const productosFiltrados = productos.filter(p => p.categoria === catNombre);
+
+                    if (productosFiltrados.length > 0) {
+                        const sectionId = `section-${catDoc.id}`;
+                        menuLinks.innerHTML += `<a href="#${sectionId}" onclick="toggleMenu()">${catNombre}</a>`;
+
+                        const section = document.createElement('div');
+                        section.className = 'category-section';
+                        section.id = sectionId;
+                        section.innerHTML = `
+                            <h2 class="category-title">${catNombre}</h2>
+                            <div class="carousel-wrapper">
+                                <div class="swiper swiper-${catDoc.id}">
+                                    <div class="swiper-wrapper">
+                                        ${productosFiltrados.map(p => `
+                                            <div class="swiper-slide" onclick="openModal('${p.nombre}', '${p.desc}', '${p.img}', '${p.precio}')">
+                                                <img src="${p.img}">
+                                                <div style="padding:10px;">
+                                                    <h3 style="margin:0; font-size:15px;">${p.nombre}</h3>
+                                                    <div class="price-container">
+                                                        <p class="price-main">${p.precio}</p>
+                                                        <p class="price-small">Efect/Trans</p>
+                                                    </div>
+                                                    <p class="price-sub">Consultar con debito/credito</p>
+                                                </div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                    <div class="swiper-pagination"></div>
+                                </div>
+                                <div class="swiper-button-next next-${catDoc.id}"></div>
+                                <div class="swiper-button-prev prev-${catDoc.id}"></div>
+                            </div>
+                        `;
+                        mainContent.appendChild(section);
+
+                        new Swiper(`.swiper-${catDoc.id}`, {
+                            slidesPerView: 2,
+                            slidesPerGroup: 2,
+                            spaceBetween: 10,
+                            navigation: { nextEl: `.next-${catDoc.id}`, prevEl: `.prev-${catDoc.id}` },
+                            breakpoints: { 1024: { slidesPerView: 3, slidesPerGroup: 1, spaceBetween: 25 } }
+                        });
+                    }
+                });
             });
-            // IMPORTANTE: Re-inicializa o actualiza el carrusel
-            if (typeof swiper !== 'undefined') swiper.update();
         });
 
-        // 1. Configuración del Carrusel
-        const swiper = new Swiper('.swiper', {
-            slidesPerView: 1,
-            spaceBetween: 20,
-            pagination: { el: '.swiper-pagination', clickable: true },
-            navigation: { nextEl: '.swiper-button-next', prevEl: '.swiper-button-prev' },
-            breakpoints: {
-                640: { slidesPerView: 2 },
-                1024: { slidesPerView: 3 }
-            }
-        });
-
-        // 2. Funciones para abrir y cerrar el Modal
-        window.openModal = (name, desc, img) => {
+        window.openModal = (name, desc, img, precio) => {
             document.getElementById('modal-title').innerText = name;
             document.getElementById('modal-desc').innerText = desc;
+            document.getElementById('modal-precio').innerText = precio;
             document.getElementById('modal-img').src = img;
-
-            const phone = "543424382633"; // CAMBIA ESTO POR EL NÚMERO DEL CLIENTE
-            const msg = encodeURIComponent(`¡Hola! Me interesa el producto: ${name}`);
-            document.getElementById('whatsapp-link').href = `https://wa.me/${phone}?text=${msg}`;
-
+            const msg = encodeURIComponent(`Hola! Me interesa: ${name} - (${precio})`);
+            document.getElementById('whatsapp-link').href = `https://wa.me/543424382633?text=${msg}`;
             document.getElementById('modal').style.display = 'flex';
         };
 
-        window.closeModal = () => {
-            document.getElementById('modal').style.display = 'none';
-        };
+        window.closeModal = () => document.getElementById('modal').style.display = 'none';
     </script>
-
 </body>
-
 </html>

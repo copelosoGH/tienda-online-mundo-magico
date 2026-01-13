@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,31 +8,54 @@
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 20px; color: #333; }
         .container { max-width: 600px; margin: auto; }
-        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        input, textarea { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); margin-bottom: 20px; }
+        input, textarea, select { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
         button { width: 100%; padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.3s; }
         .btn-save { background: #25D366; color: white; }
         .btn-save:hover { background: #1da851; }
-        .producto-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; }
+        .btn-cat { background: #333; color: white; margin-top: 5px; }
+        .producto-item, .cat-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; }
         .btn-delete { background: #ff4757; color: white; width: auto; padding: 5px 12px; font-size: 12px; }
         #preview { width: 100%; max-width: 150px; display: none; margin: 10px auto; border-radius: 8px; border: 2px solid #25D366; }
+        h3 { margin-top: 0; border-bottom: 2px solid #f4f4f4; padding-bottom: 10px; }
+        /* Estilo para el buscador */
+        .search-box { background: #fffde7; border: 1px solid #fbc02d; margin-bottom: 15px; }
     </style>
 </head>
+
 <body>
 
     <div class="container">
         <div class="card">
-            <h2>🛍️ Agregar Nuevo Producto</h2>
+            <h3>🏷️ Gestionar Categorías</h3>
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="nueva-categoria" placeholder="Ej: Remeras, Pantalones...">
+                <button class="btn-cat" onclick="guardarCategoria()" style="width: 120px;">Añadir</button>
+            </div>
+            <div id="lista-categorias" style="margin-top: 10px; max-height: 150px; overflow-y: auto;"></div>
+        </div>
+
+        <div class="card">
+            <h3>🛍️ Agregar Nuevo Producto</h3>
             <input type="text" id="nombre" placeholder="Nombre del producto">
             <textarea id="desc" placeholder="Descripción breve"></textarea>
-            <input type="text" id="precio" placeholder="Precio (ej: $1.500)">
             
+            <div style="position: relative;">
+                <span style="position: absolute; left: 10px; top: 18px; font-weight: bold;">$</span>
+                <input type="text" id="precio" placeholder="0.00" style="padding-left: 25px;" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*?)\..*/g, '$1');">
+            </div>
+
+            <label style="font-size: 13px; color: #666;">Selecciona una Categoría:</label>
+            <select id="select-categoria">
+                <option value="">-- Elige una categoría --</option>
+            </select>
+
             <img id="preview" src="" alt="Vista previa">
-            
-            <button type="button" id="btn-foto" onclick="abrirSubida()" style="background: #0080ff; margin-bottom: 10px; color: white;">
+
+            <button type="button" id="btn-foto" onclick="abrirSubida()" style="background: #0080ff; margin: 10px 0; color: white;">
                 📸 Seleccionar Foto
             </button>
-            
+
             <button class="btn-save" onclick="guardarProducto()">
                 🚀 Publicar Producto
             </button>
@@ -39,6 +63,7 @@
 
         <div class="card">
             <h3>Productos en la Web</h3>
+            <input type="text" id="buscador" class="search-box" placeholder="🔍 Buscar producto por nombre..." onkeyup="filtrarProductos()">
             <div id="lista-admin">Cargando...</div>
         </div>
     </div>
@@ -47,9 +72,8 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // --- MEJORA 1: Seguridad por sesión ---
         if (!sessionStorage.getItem('autenticado')) {
             const password = prompt("Introduce la contraseña de administrador:");
             if (password === "conradop2026") {
@@ -72,16 +96,24 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const productosRef = collection(db, "productos");
+        const categoriasRef = collection(db, "categorias");
 
-        let urlImagenSubida = ""; 
+        let urlImagenSubida = "";
+        let productosLocal = []; // Para el buscador
+
+        // MEJORA 1: Función para capitalizar texto
+        const formatText = (str) => {
+            if (!str) return "";
+            const limpio = str.trim().toLowerCase();
+            return limpio.charAt(0).toUpperCase() + limpio.slice(1);
+        };
 
         const myWidget = cloudinary.createUploadWidget({
-            cloudName: 'dpl0ce3va', 
-            uploadPreset: 'fotos_tienda' 
+            cloudName: 'dpl0ce3va',
+            uploadPreset: 'fotos_tienda'
         }, (error, result) => {
             if (!error && result && result.event === "success") {
                 urlImagenSubida = result.info.secure_url;
-                // Mostrar vista previa y feedback
                 const imgPreview = document.getElementById('preview');
                 imgPreview.src = urlImagenSubida;
                 imgPreview.style.display = "block";
@@ -91,53 +123,82 @@
 
         window.abrirSubida = () => myWidget.open();
 
-        // --- MEJORA 2: Guardar y limpiar sin recargar ---
+        window.guardarCategoria = async () => {
+            const input = document.getElementById('nueva-categoria');
+            if (!input.value) return;
+            try {
+                await addDoc(categoriasRef, { nombre: formatText(input.value) });
+                input.value = "";
+            } catch (e) { console.error(e); }
+        };
+
+        window.eliminarCategoria = async (id) => {
+            if (confirm("¿Borrar categoría?")) await deleteDoc(doc(db, "categorias", id));
+        };
+
+        onSnapshot(query(categoriasRef, orderBy("nombre", "asc")), (snapshot) => {
+            const listaCat = document.getElementById('lista-categorias');
+            const selectCat = document.getElementById('select-categoria');
+            listaCat.innerHTML = '';
+            selectCat.innerHTML = '<option value="">-- Elige una categoría --</option>';
+            snapshot.forEach((docSnap) => {
+                const cat = docSnap.data();
+                listaCat.innerHTML += `<div class="cat-item"><span>${cat.nombre}</span><button class="btn-delete" onclick="eliminarCategoria('${docSnap.id}')">×</button></div>`;
+                selectCat.innerHTML += `<option value="${cat.nombre}">${cat.nombre}</option>`;
+            });
+        });
+
         window.guardarProducto = async () => {
             const nomInput = document.getElementById('nombre');
             const descInput = document.getElementById('desc');
             const precInput = document.getElementById('precio');
+            const catSelect = document.getElementById('select-categoria');
 
-            if (!nomInput.value || !precInput.value || !urlImagenSubida) {
-                return alert("Por favor completa los campos y sube una foto.");
+            if (!nomInput.value || !precInput.value || !urlImagenSubida || !catSelect.value) {
+                return alert("Completa todos los campos.");
             }
 
             try {
-                await addDoc(productosRef, { 
-                    nombre: nomInput.value, 
-                    desc: descInput.value, 
-                    precio: precInput.value, 
-                    img: urlImagenSubida 
+                await addDoc(productosRef, {
+                    nombre: formatText(nomInput.value),
+                    desc: formatText(descInput.value),
+                    precio: "$" + precInput.value, // Guardar con el signo
+                    categoria: catSelect.value,
+                    img: urlImagenSubida,
+                    fecha: Date.now()
                 });
-
-                // Limpiar formulario
-                nomInput.value = "";
-                descInput.value = "";
-                precInput.value = "";
-                urlImagenSubida = "";
+                nomInput.value = ""; descInput.value = ""; precInput.value = "";
+                catSelect.value = ""; urlImagenSubida = "";
                 document.getElementById('preview').style.display = "none";
                 document.getElementById('btn-foto').innerText = "📸 Seleccionar Foto";
-                
-            } catch (e) {
-                alert("Error al guardar producto");
-                console.error(e);
-            }
+            } catch (e) { alert("Error al guardar"); }
         };
 
         window.eliminarProducto = async (id) => {
             if (confirm("¿Borrar este producto?")) await deleteDoc(doc(db, "productos", id));
         };
 
-        onSnapshot(productosRef, (snapshot) => {
+        // MEJORA 2: Función de filtrado
+        window.filtrarProductos = () => {
+            const busqueda = document.getElementById('buscador').value.toLowerCase();
+            renderizarLista(productosLocal.filter(p => p.nombre.toLowerCase().includes(busqueda)));
+        };
+
+        const renderizarLista = (arr) => {
             const lista = document.getElementById('lista-admin');
             lista.innerHTML = '';
-            snapshot.forEach((docSnap) => {
-                const p = docSnap.data();
+            arr.forEach((p) => {
                 lista.innerHTML += `
                 <div class="producto-item">
-                    <span><strong>${p.nombre}</strong> (${p.precio})</span>
-                    <button class="btn-delete" onclick="eliminarProducto('${docSnap.id}')">Eliminar</button>
+                    <span><strong>${p.nombre}</strong> <small style="color:#888;">(${p.categoria})</small> - ${p.precio}</span>
+                    <button class="btn-delete" onclick="eliminarProducto('${p.id}')">Eliminar</button>
                 </div>`;
             });
+        };
+
+        onSnapshot(query(productosRef, orderBy("nombre", "asc")), (snapshot) => {
+            productosLocal = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            filtrarProductos(); // Renderiza usando el buscador actual
         });
     </script>
 </body>
