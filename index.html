@@ -10,7 +10,6 @@
         :root { --primary: #25D366; --dark: #333; }
         body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f4f4f4; padding-top: 80px; }
 
-        /* --- HEADER Y LOGO --- */
         header { 
             background: white; position: fixed; top: 0; width: 100%; 
             z-index: 1000; box-shadow: 0 2px 5px rgba(0,0,0,0.1); 
@@ -36,19 +35,20 @@
         .category-section { margin-bottom: 40px; }
         .category-title { border-left: 5px solid var(--primary); padding-left: 15px; margin-left: 45px; margin-bottom: 15px; font-size: 22px; }
 
-        /* --- CARRUSEL Y FLECHAS --- */
         .carousel-wrapper { position: relative; padding: 0 60px; }
         .swiper { width: 100%; padding-bottom: 35px; }
         .swiper-slide { 
             background: #fff; border-radius: 15px; overflow: hidden; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: center; cursor: pointer; 
+            /* Sombra quitada según pedido */
+            box-shadow: none; 
+            text-align: center; cursor: pointer; 
         }
         .swiper-slide img { width: 100%; height: 280px; object-fit: cover; }
         
+        .swiper-button-next, .swiper-button-prev { color: var(--primary); }
         .swiper-button-next { right: 10px !important; }
         .swiper-button-prev { left: 10px !important; }
 
-        /* Estilos de precio ajustados */
         .price-container { margin-top: 5px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
         .price-main { color: var(--primary); font-weight: bold; font-size: 18px; margin: 0; line-height: 1; }
         .price-small { font-size: 11px; font-weight: normal; color: var(--primary); margin: 0; }
@@ -59,29 +59,35 @@
             .category-title { margin-left: 35px; font-size: 18px; }
             .carousel-wrapper { padding: 0 45px; }
             body { padding-top: 70px; }
-            .swiper-button-next, .swiper-button-prev { transform: scale(0.8); }
         }
 
-        /* --- MODAL --- */
+        /* --- MODAL Y AJUSTES DE FLECHAS --- */
         #modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 3000; justify-content: center; align-items: center; padding: 15px; box-sizing: border-box; }
         .modal-content { 
             background: #fff; padding: 20px; border-radius: 20px; width: 100%; max-width: 400px; 
-            text-align: center; position: relative; max-height: 90vh; overflow-y: auto; 
+            text-align: center; position: relative; max-height: 95vh; overflow-y: auto; 
         }
-        #modal-img { width: 100%; max-height: 300px; object-fit: contain; border-radius: 12px; margin-bottom: 10px; }
+        
+        .modal-swiper { width: 100%; height: 300px; border-radius: 12px; margin-bottom: 15px; }
+        .modal-swiper img { width: 100%; height: 100%; object-fit: contain; }
+
+        /* Flechas más pequeñas en el modal */
+        .modal-swiper .swiper-button-next, 
+        .modal-swiper .swiper-button-prev { 
+            transform: scale(0.6); 
+            color: var(--primary);
+        }
+
         #modal-title { font-size: 20px; margin: 5px 0; }
         #modal-precio { color: var(--primary); font-size: 26px; font-weight: bold; margin: 0; }
-        #modal-efect-text { color: var(--primary); font-size: 16px; margin: 0 0 5px 0; }
-        #modal-precio-sub { color: #888; font-size: 16px; margin: 5px 0 18px 0; }
         
         .btn-whatsapp { 
             background: var(--primary); color: white; text-decoration: none; padding: 12px 25px; 
             border-radius: 50px; display: inline-flex; align-items: center; gap: 10px; 
-            font-weight: bold; margin-top: 10px; 
+            font-weight: bold; margin-top: 10px; width: 100%; justify-content: center; box-sizing: border-box;
         }
-        .btn-whatsapp img { width: 30px; height: 30px; }
-        
-        .close-btn { position: absolute; top: 10px; right: 15px; font-size: 30px; cursor: pointer; color: #333; z-index: 10; }
+        .btn-whatsapp img { width: 25px; height: 25px; }
+        .close-btn { position: absolute; top: 10px; right: 15px; font-size: 30px; cursor: pointer; color: #333; z-index: 3100; }
     </style>
 </head>
 
@@ -104,13 +110,20 @@
     <div id="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeModal()">&times;</span>
-            <img id="modal-img" src="">
+            
+            <div class="swiper modal-swiper">
+                <div class="swiper-wrapper" id="modal-slides"></div>
+                <div class="swiper-pagination"></div>
+                <div class="swiper-button-next"></div>
+                <div class="swiper-button-prev"></div>
+            </div>
+
             <h2 id="modal-title"></h2>
             <p id="modal-desc" style="color:#666; font-size:14px;"></p>
             <div id="modal-precio-container">
                 <p id="modal-precio"></p>
-                <p id="modal-efect-text">Efect/Trans</p>
-                <p id="modal-precio-sub">Consultar con debito/credito</p>
+                <p id="modal-efect-text" style="color: var(--primary); font-size: 16px; margin:0;">Efect/Trans</p>
+                <p id="modal-precio-sub" style="color: #888; font-size: 14px; margin: 5px 0 15px 0;">Consultar con debito/credito</p>
             </div>
             <a id="whatsapp-link" href="#" target="_blank" class="btn-whatsapp">
                 <img src="social.png" alt="WhatsApp">
@@ -136,6 +149,7 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        let modalSwiper = null;
 
         window.toggleMenu = () => {
             const menu = document.getElementById('side-menu');
@@ -151,7 +165,7 @@
                 mainContent.innerHTML = '';
                 menuLinks.innerHTML = '';
 
-                const productos = prodSnap.docs.map(d => d.data());
+                const productos = prodSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
                 catSnap.forEach(catDoc => {
                     const catNombre = catDoc.data().nombre;
@@ -169,19 +183,20 @@
                             <div class="carousel-wrapper">
                                 <div class="swiper swiper-${catDoc.id}">
                                     <div class="swiper-wrapper">
-                                        ${productosFiltrados.map(p => `
-                                            <div class="swiper-slide" onclick="openModal('${p.nombre}', '${p.desc}', '${p.img}', '${p.precio}')">
-                                                <img src="${p.img}">
+                                        ${productosFiltrados.map(p => {
+                                            const pData = btoa(unescape(encodeURIComponent(JSON.stringify(p))));
+                                            return `
+                                            <div class="swiper-slide" onclick="openModal('${pData}')">
+                                                <img src="${p.img || p.imagenes[0]}">
                                                 <div style="padding:10px;">
                                                     <h3 style="margin:0; font-size:15px;">${p.nombre}</h3>
                                                     <div class="price-container">
                                                         <p class="price-main">${p.precio}</p>
                                                         <p class="price-small">Efect/Trans</p>
                                                     </div>
-                                                    <p class="price-sub">Consultar con debito/credito</p>
                                                 </div>
-                                            </div>
-                                        `).join('')}
+                                            </div>`;
+                                        }).join('')}
                                     </div>
                                     <div class="swiper-pagination"></div>
                                 </div>
@@ -203,17 +218,36 @@
             });
         });
 
-        window.openModal = (name, desc, img, precio) => {
-            document.getElementById('modal-title').innerText = name;
-            document.getElementById('modal-desc').innerText = desc;
-            document.getElementById('modal-precio').innerText = precio;
-            document.getElementById('modal-img').src = img;
-            const msg = encodeURIComponent(`Hola! Me interesa: ${name} - (${precio})`);
+        window.openModal = (encodedData) => {
+            const p = JSON.parse(decodeURIComponent(escape(atob(encodedData))));
+            
+            document.getElementById('modal-title').innerText = p.nombre;
+            document.getElementById('modal-desc').innerText = p.desc;
+            document.getElementById('modal-precio').innerText = p.precio;
+
+            const slidesContainer = document.getElementById('modal-slides');
+            slidesContainer.innerHTML = '';
+            
+            const listaFotos = p.imagenes && p.imagenes.length > 0 ? p.imagenes : [p.img];
+            
+            listaFotos.forEach(url => {
+                slidesContainer.innerHTML += `<div class="swiper-slide"><img src="${url}"></div>`;
+            });
+
+            if (modalSwiper) modalSwiper.destroy();
+            modalSwiper = new Swiper('.modal-swiper', {
+                pagination: { el: '.swiper-pagination', clickable: true },
+                navigation: { nextEl: '.swiper-button-next', prevEl: '.swiper-button-prev' },
+            });
+
+            const msg = encodeURIComponent(`Hola! Me interesa: ${p.nombre} - (${p.precio})`);
             document.getElementById('whatsapp-link').href = `https://wa.me/543424382633?text=${msg}`;
             document.getElementById('modal').style.display = 'flex';
         };
 
-        window.closeModal = () => document.getElementById('modal').style.display = 'none';
+        window.closeModal = () => {
+            document.getElementById('modal').style.display = 'none';
+        };
     </script>
 </body>
 </html>

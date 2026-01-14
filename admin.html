@@ -16,9 +16,12 @@
         .btn-cat { background: #333; color: white; margin-top: 5px; }
         .producto-item, .cat-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; }
         .btn-delete { background: #ff4757; color: white; width: auto; padding: 5px 12px; font-size: 12px; }
-        #preview { width: 100%; max-width: 150px; display: none; margin: 10px auto; border-radius: 8px; border: 2px solid #25D366; }
+        
+        /* Contenedor de miniaturas */
+        #preview-container { display: flex; gap: 10px; flex-wrap: wrap; margin: 10px 0; }
+        .thumb { width: 80px; height: 80px; object-fit: cover; border-radius: 8px; border: 2px solid #25D366; }
+        
         h3 { margin-top: 0; border-bottom: 2px solid #f4f4f4; padding-bottom: 10px; }
-        /* Estilo para el buscador */
         .search-box { background: #fffde7; border: 1px solid #fbc02d; margin-bottom: 15px; }
     </style>
 </head>
@@ -42,7 +45,7 @@
             
             <div style="position: relative;">
                 <span style="position: absolute; left: 10px; top: 18px; font-weight: bold;">$</span>
-                <input type="text" id="precio" placeholder="0.00" style="padding-left: 25px;" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*?)\..*/g, '$1');">
+                <input type="text" id="precio" placeholder="0.00 (Deja 0 para 'Consultar')" style="padding-left: 25px;">
             </div>
 
             <label style="font-size: 13px; color: #666;">Selecciona una Categoría:</label>
@@ -50,10 +53,10 @@
                 <option value="">-- Elige una categoría --</option>
             </select>
 
-            <img id="preview" src="" alt="Vista previa">
+            <div id="preview-container"></div>
 
             <button type="button" id="btn-foto" onclick="abrirSubida()" style="background: #0080ff; margin: 10px 0; color: white;">
-                📸 Seleccionar Foto
+                📸 Seleccionar Fotos
             </button>
 
             <button class="btn-save" onclick="guardarProducto()">
@@ -98,10 +101,9 @@
         const productosRef = collection(db, "productos");
         const categoriasRef = collection(db, "categorias");
 
-        let urlImagenSubida = "";
-        let productosLocal = []; // Para el buscador
+        let fotosSubidas = []; // ARRAY para guardar múltiples URLs
+        let productosLocal = [];
 
-        // MEJORA 1: Función para capitalizar texto
         const formatText = (str) => {
             if (!str) return "";
             const limpio = str.trim().toLowerCase();
@@ -110,16 +112,23 @@
 
         const myWidget = cloudinary.createUploadWidget({
             cloudName: 'dpl0ce3va',
-            uploadPreset: 'fotos_tienda'
+            uploadPreset: 'fotos_tienda',
+            multiple: true  // PERMITIR MÚLTIPLES
         }, (error, result) => {
             if (!error && result && result.event === "success") {
-                urlImagenSubida = result.info.secure_url;
-                const imgPreview = document.getElementById('preview');
-                imgPreview.src = urlImagenSubida;
-                imgPreview.style.display = "block";
-                document.getElementById('btn-foto').innerText = "✅ Foto Cargada";
+                fotosSubidas.push(result.info.secure_url);
+                actualizarPreview();
+                document.getElementById('btn-foto').innerText = `✅ ${fotosSubidas.length} Foto(s) Listas`;
             }
         });
+
+        function actualizarPreview() {
+            const container = document.getElementById('preview-container');
+            container.innerHTML = "";
+            fotosSubidas.forEach(url => {
+                container.innerHTML += `<img src="${url}" class="thumb">`;
+            });
+        }
 
         window.abrirSubida = () => myWidget.open();
 
@@ -154,23 +163,35 @@
             const precInput = document.getElementById('precio');
             const catSelect = document.getElementById('select-categoria');
 
-            if (!nomInput.value || !precInput.value || !urlImagenSubida || !catSelect.value) {
-                return alert("Completa todos los campos.");
+            // Validación mejorada: solo nombre, categoría y al menos una foto son obligatorios
+            if (!nomInput.value || !catSelect.value || fotosSubidas.length === 0) {
+                return alert("Nombre, categoría y al menos una foto son obligatorios.");
+            }
+
+            // Lógica de precio: Si es vacío o "0", guardamos "Consultar"
+            let precioFinal = precInput.value.trim();
+            if (precioFinal === "" || precioFinal === "0") {
+                precioFinal = "Consultar";
+            } else {
+                precioFinal = "$" + precioFinal;
             }
 
             try {
                 await addDoc(productosRef, {
                     nombre: formatText(nomInput.value),
                     desc: formatText(descInput.value),
-                    precio: "$" + precInput.value, // Guardar con el signo
+                    precio: precioFinal,
                     categoria: catSelect.value,
-                    img: urlImagenSubida,
+                    imagenes: fotosSubidas, // GUARDAMOS EL ARRAY COMPLETO
+                    img: fotosSubidas[0],    // Guardamos la primera como portada (para compatibilidad)
                     fecha: Date.now()
                 });
+
+                // Limpiar todo
                 nomInput.value = ""; descInput.value = ""; precInput.value = "";
-                catSelect.value = ""; urlImagenSubida = "";
-                document.getElementById('preview').style.display = "none";
-                document.getElementById('btn-foto').innerText = "📸 Seleccionar Foto";
+                catSelect.value = ""; fotosSubidas = [];
+                document.getElementById('preview-container').innerHTML = "";
+                document.getElementById('btn-foto').innerText = "📸 Seleccionar Fotos";
             } catch (e) { alert("Error al guardar"); }
         };
 
@@ -178,7 +199,6 @@
             if (confirm("¿Borrar este producto?")) await deleteDoc(doc(db, "productos", id));
         };
 
-        // MEJORA 2: Función de filtrado
         window.filtrarProductos = () => {
             const busqueda = document.getElementById('buscador').value.toLowerCase();
             renderizarLista(productosLocal.filter(p => p.nombre.toLowerCase().includes(busqueda)));
@@ -198,7 +218,7 @@
 
         onSnapshot(query(productosRef, orderBy("nombre", "asc")), (snapshot) => {
             productosLocal = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            filtrarProductos(); // Renderiza usando el buscador actual
+            filtrarProductos();
         });
     </script>
 </body>
