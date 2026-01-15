@@ -5,9 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mundo Magico - Catalogo Online</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
     <style>
-        :root { --primary: #25D366; --dark: #333; }
+        :root { --primary: #25D366; --dark: #333; --font-serif: 'Playfair Display', serif; }
         body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f4f4f4; padding-top: 80px; }
 
         header { 
@@ -17,7 +18,31 @@
             box-sizing: border-box;
         }
         .menu-btn { background: none; border: none; cursor: pointer; padding: 0; font-size: 25px; margin-left: 20px;}
-        .header-logo { height: 75px; object-fit: contain; }
+        .header-logo { height: 50px; object-fit: contain; margin-right: 20px; }
+
+        /* Estilos para el nuevo Logo Principal Superior */
+        .hero-section {
+            text-align: center;
+            padding: 20px 0 40px 0;
+            background: transparent;
+        }
+        .main-logo {
+            max-width: 150px;
+            height: auto;
+            margin-bottom: 10px;
+        }
+        .hero-section h1 {
+            font-family: var(--font-serif);
+            font-size: 38px;
+            margin: 0;
+            color: var(--dark);
+        }
+        .hero-section p {
+            font-size: 18px;
+            color: #666;
+            margin: 5px 0 0 0;
+            font-style: italic;
+        }
 
         .side-menu {
             position: fixed; top: 0; left: -250px; width: 250px; height: 100%;
@@ -33,35 +58,53 @@
 
         .container { max-width: 1100px; margin: auto; padding: 10px; }
         .category-section { margin-bottom: 40px; }
-        .category-title { border-left: 5px solid var(--primary); padding-left: 15px; margin-left: 45px; margin-bottom: 15px; font-size: 22px; }
+        
+        .category-title { 
+            font-family: var(--font-serif);
+            font-size: 28px;
+            color: var(--dark);
+            margin-left: 45px; 
+            margin-bottom: 20px;
+            border-left: 5px solid var(--dark);
+            padding-left: 15px;
+        }
 
         .carousel-wrapper { position: relative; padding: 0 60px; }
         .swiper { width: 100%; padding-bottom: 35px; }
         .swiper-slide { 
             background: #fff; border-radius: 15px; overflow: hidden; 
-            /* Sombra quitada según pedido */
             box-shadow: none; 
             text-align: center; cursor: pointer; 
         }
         .swiper-slide img { width: 100%; height: 280px; object-fit: cover; }
         
-        .swiper-button-next, .swiper-button-prev { color: var(--primary); }
+        .swiper-button-next, .swiper-button-prev { color: var(--dark); }
         .swiper-button-next { right: 10px !important; }
         .swiper-button-prev { left: 10px !important; }
 
-        .price-container { margin-top: 5px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
-        .price-main { color: var(--primary); font-weight: bold; font-size: 18px; margin: 0; line-height: 1; }
-        .price-small { font-size: 11px; font-weight: normal; color: var(--primary); margin: 0; }
-        .price-sub { color: #888; font-size: 11px; margin: 4px 0 0 0; }
+        .price-container { margin-top: 8px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+        .price-main { 
+            color: black; 
+            font-weight: bold; 
+            font-size: 18px; 
+            margin: 0; 
+            line-height: 1;
+            border: 1px solid black;
+            padding: 4px 10px;
+            display: inline-block;
+        }
+        .price-small { font-size: 11px; font-weight: normal; color: #666; margin: 0; }
 
         @media (max-width: 640px) {
+            .hero-section h1 { font-size: 30px; }
+            .hero-section p { font-size: 16px; }
             .swiper-slide img { height: 180px; }
-            .category-title { margin-left: 35px; font-size: 18px; }
+            .category-title { margin-left: 35px; font-size: 22px; }
             .carousel-wrapper { padding: 0 45px; }
             body { padding-top: 70px; }
         }
 
-        /* --- MODAL Y AJUSTES DE FLECHAS --- */
+        /* --- MODAL --- */
         #modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 3000; justify-content: center; align-items: center; padding: 15px; box-sizing: border-box; }
         .modal-content { 
             background: #fff; padding: 20px; border-radius: 20px; width: 100%; max-width: 400px; 
@@ -71,15 +114,20 @@
         .modal-swiper { width: 100%; height: 300px; border-radius: 12px; margin-bottom: 15px; }
         .modal-swiper img { width: 100%; height: 100%; object-fit: contain; }
 
-        /* Flechas más pequeñas en el modal */
         .modal-swiper .swiper-button-next, 
-        .modal-swiper .swiper-button-prev { 
-            transform: scale(0.6); 
-            color: var(--primary);
-        }
+        .modal-swiper .swiper-button-prev { transform: scale(0.6); color: var(--dark); }
 
-        #modal-title { font-size: 20px; margin: 5px 0; }
-        #modal-precio { color: var(--primary); font-size: 26px; font-weight: bold; margin: 0; }
+        #modal-title { font-family: var(--font-serif); font-size: 24px; margin: 5px 0; }
+        
+        #modal-precio { 
+            color: black; 
+            font-size: 26px; 
+            font-weight: bold; 
+            margin: 10px 0;
+            border: 1px solid black;
+            display: inline-block;
+            padding: 5px 15px;
+        }
         
         .btn-whatsapp { 
             background: var(--primary); color: white; text-decoration: none; padding: 12px 25px; 
@@ -95,34 +143,41 @@
 
     <header>
         <button class="menu-btn" onclick="toggleMenu()">☰</button>
-        <h2>Mundo Mágico</h2>
-        <img src="logoMM.jpeg" alt="Logo Mundo Mágico" class="header-logo">
+        <h2 style="font-family: var(--font-serif); font-size: 1.2rem;">Mundo Mágico</h2>
+        <img src="logoMM.jpeg" alt="Logo" class="header-logo">
     </header>
 
     <div id="side-menu" class="side-menu">
-        <h3 style="margin-top: 0;">Categorías</h3>
+        <h3 style="margin-top: 0; font-family: var(--font-serif);">Categorías</h3>
         <div id="menu-links"></div>
     </div>
+    
     <div id="overlay" class="overlay" onclick="toggleMenu()"></div>
 
-    <div class="container" id="main-content"></div>
+    <div class="container">
+        <div class="hero-section">
+            <img src="logoMM.jpeg" alt="Mundo Mágico Logo" class="main-logo">
+            <h1>Mundo Mágico</h1>
+            <p>Tienda de Ropa de Mujeres</p>
+        </div>
+
+        <div id="main-content"></div>
+    </div>
 
     <div id="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeModal()">&times;</span>
-            
             <div class="swiper modal-swiper">
                 <div class="swiper-wrapper" id="modal-slides"></div>
                 <div class="swiper-pagination"></div>
                 <div class="swiper-button-next"></div>
                 <div class="swiper-button-prev"></div>
             </div>
-
             <h2 id="modal-title"></h2>
             <p id="modal-desc" style="color:#666; font-size:14px;"></p>
             <div id="modal-precio-container">
                 <p id="modal-precio"></p>
-                <p id="modal-efect-text" style="color: var(--primary); font-size: 16px; margin:0;">Efect/Trans</p>
+                <p id="modal-efect-text" style="color: #333; font-size: 16px; margin:5px 0 0 0; font-weight: bold;">Efect/Trans</p>
                 <p id="modal-precio-sub" style="color: #888; font-size: 14px; margin: 5px 0 15px 0;">Consultar con debito/credito</p>
             </div>
             <a id="whatsapp-link" href="#" target="_blank" class="btn-whatsapp">
@@ -188,8 +243,8 @@
                                             return `
                                             <div class="swiper-slide" onclick="openModal('${pData}')">
                                                 <img src="${p.img || p.imagenes[0]}">
-                                                <div style="padding:10px;">
-                                                    <h3 style="margin:0; font-size:15px;">${p.nombre}</h3>
+                                                <div style="padding:15px;">
+                                                    <h3 style="margin:0; font-size:15px; color:#444;">${p.nombre}</h3>
                                                     <div class="price-container">
                                                         <p class="price-main">${p.precio}</p>
                                                         <p class="price-small">Efect/Trans</p>
@@ -220,16 +275,13 @@
 
         window.openModal = (encodedData) => {
             const p = JSON.parse(decodeURIComponent(escape(atob(encodedData))));
-            
             document.getElementById('modal-title').innerText = p.nombre;
             document.getElementById('modal-desc').innerText = p.desc;
             document.getElementById('modal-precio').innerText = p.precio;
 
             const slidesContainer = document.getElementById('modal-slides');
             slidesContainer.innerHTML = '';
-            
             const listaFotos = p.imagenes && p.imagenes.length > 0 ? p.imagenes : [p.img];
-            
             listaFotos.forEach(url => {
                 slidesContainer.innerHTML += `<div class="swiper-slide"><img src="${url}"></div>`;
             });
